@@ -1,0 +1,23 @@
+{
+  "order_id": "ORD54321",
+  "order_info": {
+    "products": [
+      {
+        "product_id": "P789",
+        "name": "Product C",
+        "quantity": 3,
+        "price": 10.99
+      },
+      {
+        "product_id": "P987",
+        "name": "Product D",
+        "quantity": 1,
+        "price": 45.75
+      }
+    ],
+    "total_amount": 78.71
+  },
+  "customerId": 456,
+  "includeOrders": null,
+  "includeAddress": null
+}
