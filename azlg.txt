@@ -54,3 +54,12 @@ Expected Outcome:
   
   - Implement an efficient and scalable data processing workflow in Azure Logic Apps tailored for an e-commerce platform.
   - Achieve seamless integration between Azure services to streamline order processing and enhance customer experience.
+
+--------------------------------------------------------------------------------------------------------------------------
+After Step 6 (Azure functions app processing):
+1. Process all the orders using Azure Function apps and sent the final order details to Azure Table Storage.
+2. New workflow will be triggerd as soon as the data ingested into the azure table storage.
+3. Azure Event Hubs Connector - for logging the processed orders data fetched from the azure table storage and real time monitoring.
+4. Event Grid Connector - Based on the events generated from the last step of Azure Event Hub connector, 
+Use the event grid to send the orders data to the snoflake.
+--------------------------------------------------------------------------------------------------------------------------
