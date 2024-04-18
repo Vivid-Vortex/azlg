@@ -96,3 +96,13 @@ EventHub:
 Use EventHub explorer vs code plugin to peek into the created event.
 ----------------------------------------------------------------------------------
 =============================================================================================================================
+SQL Queries:
+
+SELECT * FROM filetransferbypoc1.customer_order;
+use filetransferbypoc1;
+truncate table customer_order
+
+SELECT * FROM filetransferbypoc1.customer_order;
+
+truncate customer_order;
+=============================================================================================================================
