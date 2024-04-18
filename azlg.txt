@@ -62,4 +62,37 @@ After Step 6 (Azure functions app processing):
 3. Azure Event Hubs Connector - for logging the processed orders data fetched from the azure table storage and real time monitoring.
 4. Event Grid Connector - Based on the events generated from the last step of Azure Event Hub connector, 
 Use the event grid to send the orders data to the snoflake.
---------------------------------------------------------------------------------------------------------------------------
+=============================================================================================================================
+Usefull notes and links:
+
+Snoflake oauth connection:-
+https://learn.microsoft.com/en-us/connectors/snowflakeip/ #official documentation for logic app and snowflake connection
+
+JDBC connector -
+https://techcommunity.microsoft.com/t5/azure-integration-services-blog/connecting-to-snowflake-from-logic-app-standard/ba-p/3839480
+
+Issue - JDBC connector type is only supported for standard logic app
+
+--------------
+https://www.youtube.com/watch?v=aTRo7MXfAmo&ab_channel=DotPi #snowflake azure oauth connection through Azure Enterprise and then MS Entra Id, aka active directory.
+
+one (SAML_IDENTITY_PROVIDER) of the step is deprecated, use below url in place of that to create the security..
+https://community.snowflake.com/s/article/HOW-TO-Setup-SSO-with-Azure-AD-and-the-Snowflake-New-URL-Format-or-Privatelink
+
+some other useful snowflake links:
+https://www.youtube.com/watch?v=hyc75UfbYD0&ab_channel=KahanDataSolutions
+https://community.snowflake.com/s/article/Account-Replication-fails-with-an-error-Use-security-integration-type-saml-instead-of-account-parameter#:~:text=Account%20Replication%3A%20Error%3A%20%22Use,saml%20instead%20of%20account%20parameter%22.&text=The%20failure%20happens%20due%20to,left%20in%20the%20SAML_IDENTITY_PROVIDER%20parameter.
+https://www.youtube.com/watch?v=lyW_Wacn79s&ab_channel=KahanDataSolutions
+https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-security-integration
+https://techcommunity.microsoft.com/t5/azure-integration-services-blog/connecting-to-snowflake-from-logic-app-standard/ba-p/3839480
+
+
+Functions app and key-valut integration:
+
+Other links:
+https://www.youtube.com/watch?v=Hlcnr3RVPHY&ab_channel=AzureAppModernization
+----------------------------------------------------------------------------------
+EventHub:
+Use EventHub explorer vs code plugin to peek into the created event.
+----------------------------------------------------------------------------------
+=============================================================================================================================
