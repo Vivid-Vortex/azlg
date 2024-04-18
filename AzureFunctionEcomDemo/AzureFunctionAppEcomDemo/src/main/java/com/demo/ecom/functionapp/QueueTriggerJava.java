@@ -26,11 +26,7 @@ public class QueueTriggerJava {
     final String KEY_VAULT_URL = "https://ecomkeyvalut002.vault.azure.net/";
 
     // Define your Azure Storage connection string
-    private static final String storageConnectionString = "" +
-            "DefaultEndpointsProtocol=https;" +
-            "AccountName=ecomstorageaccount001;" +
-            "AccountKeyy=9W/wVBgDV76nTlr2frreazCuoazSdfReNkAbAx9COCA+vRmjnvECRm7d5BJi2cWh+an5lSSvtF9N+AStR8KAgg;" +
-            "EndpointSuffix=core.windows.net";
+    private static final String storageConnectionString = "get_the_connection_string_from_azure_portal";
 //    @FunctionName("QueueTriggerJava") // This name should be same as class name of this java file
 //    public void run(
 //        @QueueTrigger(name = "message", queueName = "ecomstorageaccountqueue001", connection = "AzureWebJobsStorage") String message,
