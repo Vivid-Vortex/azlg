@@ -1,5 +1,0 @@
-{
-  "customerId": "123456",
-  "includeOrders": true,
-  "includeAddress": true
-}
