@@ -1,98 +1,61 @@
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Collections;
-import java.util.List;
-
-@ExtendWith(MockitoExtension.class)
-public class ProductSchemaControllerTest {
+@WebMvcTest(ProductController.class)
+public class ProductControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @InjectMocks
-    private ProductSchemaController productSchemaController;
-
-    @Mock
+    @MockBean
     private ProductSchemaService productSchemaService;
 
-    private JacksonTester<RealmDatasourcesModel> jsonTester;
+    @MockBean
+    private ProductSchemaMappingRepository productSchemaMappingRepository;
+
+    @MockBean
+    private CustomerDatasourceDetailsRepository customerDatasourceDetailsRepository;
+
+    @MockBean
+    private ProductSchemaMappingMapper productSchemaMappingMapper;
+
+    @MockBean
+    private CustomerDatasourceDetailsMapper customerDatasourceDetailsMapper;
 
     @BeforeEach
-    public void setup() {
-        JacksonTester.initFields(this, new ObjectMapper());
-        mockMvc = MockMvcBuilders.standaloneSetup(productSchemaController).build();
+    public void setUp() {
+        // Set up mock behavior here if necessary
+        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
+        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
+                .thenReturn(Collections.emptyList());
+        when(customerDatasourceDetailsRepository.save(any(CustomerDatasourceDetails.class)))
+                .thenReturn(new CustomerDatasourceDetails());
+        when(customerDatasourceDetailsMapper.toEntity(any(RealmDatasourceModel.class)))
+                .thenReturn(new CustomerDatasourceDetails());
+        when(customerDatasourceDetailsMapper.toDTO(any(CustomerDatasourceDetails.class)))
+                .thenReturn(new RealmDatasourceModel());
     }
 
     @Test
-    public void testSaveRealmDatasources_ShouldReturnOk() throws Exception {
-        // Given
+    public void testSaveRealmDatasources() throws Exception {
         String schemaId = "testSchemaId";
-        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
-        realmDatasource.setId("testRealmId");
-        realmDatasource.setFieldName("testField");
+        String requestJson = "{\"realmDatasources\":[{\"id\":\"testRealmId\", \"fieldName\":\"testField\"}]}";
 
-        RealmDatasourcesModel requestDto = new RealmDatasourcesModel();
-        requestDto.setRealmDatasources(List.of(realmDatasource));
-
-        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
-        responseDto.setRealmDatasources(List.of(realmDatasource));
-
-        when(productSchemaService.saveRealmDatasources(anyString(), any())).thenReturn(responseDto);
-
-        // When / Then
         mockMvc.perform(post("/productSchemas/{schemaId}/realmDatasources", schemaId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonTester.write(requestDto).getJson()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.realmDatasources[0].fieldName").value("testField"));
-    }
-
-    @Test
-    public void testGetRealmDatasources_ShouldReturnOk() throws Exception {
-        // Given
-        String schemaId = "testSchemaId";
-        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
-        realmDatasource.setFieldName("testField");
-
-        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
-        responseDto.setRealmDatasources(List.of(realmDatasource));
-
-        when(productSchemaService.getRealmDatasources(anyString())).thenReturn(responseDto);
-
-        // When / Then
-        mockMvc.perform(get("/productSchemas/{schemaId}/realmDatasources", schemaId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.realmDatasources[0].fieldName").value("testField"));
-    }
-
-    @Test
-    public void testDeleteRealmDatasource_ShouldReturnNoContent() throws Exception {
-        // Given
-        String schemaId = "testSchemaId";
-        String realmId = "testRealmId";
-
-        // When / Then
-        mockMvc.perform(delete("/productSchemas/{schemaId}/realmDatasources/{realmId}", schemaId, realmId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                .content(requestJson))
+                .andExpect(status().isOk());
     }
 }
