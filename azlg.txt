@@ -1,61 +1,81 @@
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
-@WebMvcTest(ProductController.class)
-public class ProductControllerTest {
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-    @Autowired
-    private MockMvc mockMvc;
+public class ProductSchemaControllerTest {
 
-    @MockBean
+    @Mock
     private ProductSchemaService productSchemaService;
 
-    @MockBean
-    private ProductSchemaMappingRepository productSchemaMappingRepository;
-
-    @MockBean
-    private CustomerDatasourceDetailsRepository customerDatasourceDetailsRepository;
-
-    @MockBean
-    private ProductSchemaMappingMapper productSchemaMappingMapper;
-
-    @MockBean
-    private CustomerDatasourceDetailsMapper customerDatasourceDetailsMapper;
+    @InjectMocks
+    private ProductSchemaController productSchemaController;
 
     @BeforeEach
     public void setUp() {
-        // Set up mock behavior here if necessary
-        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
-        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
-                .thenReturn(Collections.emptyList());
-        when(customerDatasourceDetailsRepository.save(any(CustomerDatasourceDetails.class)))
-                .thenReturn(new CustomerDatasourceDetails());
-        when(customerDatasourceDetailsMapper.toEntity(any(RealmDatasourceModel.class)))
-                .thenReturn(new CustomerDatasourceDetails());
-        when(customerDatasourceDetailsMapper.toDTO(any(CustomerDatasourceDetails.class)))
-                .thenReturn(new RealmDatasourceModel());
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    public void testSaveRealmDatasources() throws Exception {
+    public void testSaveRealmDatasources() {
         String schemaId = "testSchemaId";
-        String requestJson = "{\"realmDatasources\":[{\"id\":\"testRealmId\", \"fieldName\":\"testField\"}]}";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setFieldName("testField");
 
-        mockMvc.perform(post("/productSchemas/{schemaId}/realmDatasources", schemaId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-                .andExpect(status().isOk());
+        RealmDatasourcesModel requestDto = new RealmDatasourcesModel();
+        requestDto.setRealmDatasources(Collections.singletonList(realmDatasource));
+
+        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
+        responseDto.setRealmDatasources(Collections.singletonList(realmDatasource));
+
+        when(productSchemaService.saveRealmDatasources(anyString(), any(List.class))).thenReturn(responseDto);
+
+        ResponseEntity<RealmDatasourcesModel> response = productSchemaController.saveRealmDatasources(schemaId, requestDto);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getRealmDatasources()).isNotEmpty();
+        assertThat(response.getBody().getRealmDatasources().get(0).getFieldName()).isEqualTo("testField");
+    }
+
+    @Test
+    public void testGetRealmDatasources() {
+        String schemaId = "testSchemaId";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setFieldName("testField");
+
+        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
+        responseDto.setRealmDatasources(Collections.singletonList(realmDatasource));
+
+        when(productSchemaService.getRealmDatasources(anyString())).thenReturn(responseDto);
+
+        ResponseEntity<RealmDatasourcesModel> response = productSchemaController.getRealmDatasources(schemaId);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getRealmDatasources()).isNotEmpty();
+        assertThat(response.getBody().getRealmDatasources().get(0).getFieldName()).isEqualTo("testField");
+    }
+
+    @Test
+    public void testDeleteRealmDatasource() {
+        String schemaId = "testSchemaId";
+        String realmId = "testRealmId";
+
+        // You can add additional mocking here if needed
+        ResponseEntity<Void> response = productSchemaController.deleteRealmDatasource(schemaId, realmId);
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(204);
     }
 }
