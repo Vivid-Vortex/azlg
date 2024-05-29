@@ -1,72 +1,98 @@
-@Test
-    public void testSaveRealmDatasources_ShouldThrowException_WhenDuplicateEntryExists() {
-        // Given
-        String schemaId = "testSchemaId";
-        String realmId = "testRealmId";
-        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
-        realmDatasource.setId(realmId);
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-        List<RealmDatasourceModel> realmDatasources = List.of(realmDatasource);
-        List<CustomerDatasourceDetails> existingDetailsList = new ArrayList<>();
-        existingDetailsList.add(new CustomerDatasourceDetails());
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-        // Mock the existence check for schemaId
-        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
+import java.util.Collections;
+import java.util.List;
 
-        // Mock the check for existing realmId and schemaId combination
-        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
-                .thenReturn(existingDetailsList);
+@ExtendWith(MockitoExtension.class)
+public class ProductSchemaControllerTest {
 
-        // When / Then
-        assertThatThrownBy(() -> productSchemaService.saveRealmDatasources(schemaId, realmDatasources))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Duplicate entry found for schemaId: " + schemaId + " and one of the realmIds");
+    @Autowired
+    private MockMvc mockMvc;
 
-        // Verify interactions
-        verify(productSchemaMappingRepository, times(1)).existsBySchemaId(anyString());
-        verify(customerDatasourceDetailsRepository, times(1)).findBySchemaIdAndRealmId(anyString(), anyString());
+    @InjectMocks
+    private ProductSchemaController productSchemaController;
+
+    @Mock
+    private ProductSchemaService productSchemaService;
+
+    private JacksonTester<RealmDatasourcesModel> jsonTester;
+
+    @BeforeEach
+    public void setup() {
+        JacksonTester.initFields(this, new ObjectMapper());
+        mockMvc = MockMvcBuilders.standaloneSetup(productSchemaController).build();
     }
 
     @Test
-    public void testSaveRealmDatasources_ShouldSaveSuccessfully_WhenNoDuplicateEntryExists() {
+    public void testSaveRealmDatasources_ShouldReturnOk() throws Exception {
+        // Given
+        String schemaId = "testSchemaId";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setId("testRealmId");
+        realmDatasource.setFieldName("testField");
+
+        RealmDatasourcesModel requestDto = new RealmDatasourcesModel();
+        requestDto.setRealmDatasources(List.of(realmDatasource));
+
+        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
+        responseDto.setRealmDatasources(List.of(realmDatasource));
+
+        when(productSchemaService.saveRealmDatasources(anyString(), any())).thenReturn(responseDto);
+
+        // When / Then
+        mockMvc.perform(post("/productSchemas/{schemaId}/realmDatasources", schemaId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonTester.write(requestDto).getJson()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.realmDatasources[0].fieldName").value("testField"));
+    }
+
+    @Test
+    public void testGetRealmDatasources_ShouldReturnOk() throws Exception {
+        // Given
+        String schemaId = "testSchemaId";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setFieldName("testField");
+
+        RealmDatasourcesModel responseDto = new RealmDatasourcesModel();
+        responseDto.setRealmDatasources(List.of(realmDatasource));
+
+        when(productSchemaService.getRealmDatasources(anyString())).thenReturn(responseDto);
+
+        // When / Then
+        mockMvc.perform(get("/productSchemas/{schemaId}/realmDatasources", schemaId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.realmDatasources[0].fieldName").value("testField"));
+    }
+
+    @Test
+    public void testDeleteRealmDatasource_ShouldReturnNoContent() throws Exception {
         // Given
         String schemaId = "testSchemaId";
         String realmId = "testRealmId";
-        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
-        realmDatasource.setId(realmId);
 
-        List<RealmDatasourceModel> realmDatasources = List.of(realmDatasource);
-        List<CustomerDatasourceDetails> emptyDetailsList = new ArrayList<>();
-        CustomerDatasourceDetails customerDatasourceDetails = new CustomerDatasourceDetails();
-        customerDatasourceDetails.setSchemaId(schemaId);
-
-        // Mock the existence check for schemaId
-        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
-
-        // Mock the check for existing realmId and schemaId combination
-        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
-                .thenReturn(emptyDetailsList);
-
-        // Mock the save operation
-        when(customerDatasourceDetailsRepository.save(any(CustomerDatasourceDetails.class)))
-                .thenReturn(customerDatasourceDetails);
-
-        // Mock the mapping from DTO to entity and vice versa
-        when(customerDatasourceDetailsMapper.toEntity(any(RealmDatasourceModel.class)))
-                .thenReturn(customerDatasourceDetails);
-        when(customerDatasourceDetailsMapper.toDTO(any(CustomerDatasourceDetails.class)))
-                .thenReturn(realmDatasource);
-
-        // When
-        RealmDatasourcesModel response = productSchemaService.saveRealmDatasources(schemaId, realmDatasources);
-
-        // Then
-        assertThat(response).isNotNull();
-        assertThat(response.getRealmDatasources()).isNotEmpty();
-        assertThat(response.getRealmDatasources().get(0).getId()).isEqualTo(realmId);
-
-        // Verify interactions
-        verify(productSchemaMappingRepository, times(1)).existsBySchemaId(anyString());
-        verify(customerDatasourceDetailsRepository, times(1)).findBySchemaIdAndRealmId(anyString(), anyString());
-        verify(customerDatasourceDetailsRepository, times(1)).save(any(CustomerDatasourceDetails.class));
+        // When / Then
+        mockMvc.perform(delete("/productSchemas/{schemaId}/realmDatasources/{realmId}", schemaId, realmId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
     }
+}
