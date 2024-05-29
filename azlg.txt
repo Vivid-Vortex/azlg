@@ -1,238 +1,72 @@
-CRUD layer with Mongo :-
+@Test
+    public void testSaveRealmDatasources_ShouldThrowException_WhenDuplicateEntryExists() {
+        // Given
+        String schemaId = "testSchemaId";
+        String realmId = "testRealmId";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setId(realmId);
 
-### Project Structure
+        List<RealmDatasourceModel> realmDatasources = List.of(realmDatasource);
+        List<CustomerDatasourceDetails> existingDetailsList = new ArrayList<>();
+        existingDetailsList.add(new CustomerDatasourceDetails());
 
-```
-src
-├── main
-│   ├── java
-│   │   └── com
-│   │       └── example
-│   │           └── demo
-│   │               ├── controller
-│   │               │   └── UserController.java
-│   │               ├── dto
-│   │               │   └── UserDTO.java
-│   │               ├── entity
-│   │               │   └── User.java
-│   │               ├── repository
-│   │               │   └── UserRepository.java
-│   │               ├── service
-│   │               │   └── UserService.java
-│   │               └── DemoApplication.java
-│   └── resources
-│       ├── application.properties
-│       └── application.yml (if needed)
-└── test
-    └── java
-        └── com
-            └── example
-                └── demo
-                    └── DemoApplicationTests.java
-```
+        // Mock the existence check for schemaId
+        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
 
-### Entity
+        // Mock the check for existing realmId and schemaId combination
+        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
+                .thenReturn(existingDetailsList);
 
-```java
-package com.example.demo.entity;
+        // When / Then
+        assertThatThrownBy(() -> productSchemaService.saveRealmDatasources(schemaId, realmDatasources))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Duplicate entry found for schemaId: " + schemaId + " and one of the realmIds");
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-@Data
-@NoArgsConstructor
-@Document(collection = "users")
-public class User {
-    @Id
-    private String id;
-    private String name;
-    private String email;
-}
-```
-
-### DTO
-
-```java
-package com.example.demo.dto;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-public class UserDTO {
-    private String id;
-    private String name;
-    private String email;
-}
-```
-
-### Repository
-
-```java
-package com.example.demo.repository;
-
-import com.example.demo.entity.User;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface UserRepository extends MongoRepository<User, String> {
-}
-```
-
-### Service
-
-```java
-package com.example.demo.service;
-
-import com.example.demo.dto.UserDTO;
-import com.example.demo.entity.User;
-import com.example.demo.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-@Service
-public class UserService {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+        // Verify interactions
+        verify(productSchemaMappingRepository, times(1)).existsBySchemaId(anyString());
+        verify(customerDatasourceDetailsRepository, times(1)).findBySchemaIdAndRealmId(anyString(), anyString());
     }
 
-    public UserDTO getUserById(String id) {
-        Optional<User> user = userRepository.findById(id);
-        return user.map(this::convertToDTO).orElse(null);
+    @Test
+    public void testSaveRealmDatasources_ShouldSaveSuccessfully_WhenNoDuplicateEntryExists() {
+        // Given
+        String schemaId = "testSchemaId";
+        String realmId = "testRealmId";
+        RealmDatasourceModel realmDatasource = new RealmDatasourceModel();
+        realmDatasource.setId(realmId);
+
+        List<RealmDatasourceModel> realmDatasources = List.of(realmDatasource);
+        List<CustomerDatasourceDetails> emptyDetailsList = new ArrayList<>();
+        CustomerDatasourceDetails customerDatasourceDetails = new CustomerDatasourceDetails();
+        customerDatasourceDetails.setSchemaId(schemaId);
+
+        // Mock the existence check for schemaId
+        when(productSchemaMappingRepository.existsBySchemaId(anyString())).thenReturn(true);
+
+        // Mock the check for existing realmId and schemaId combination
+        when(customerDatasourceDetailsRepository.findBySchemaIdAndRealmId(anyString(), anyString()))
+                .thenReturn(emptyDetailsList);
+
+        // Mock the save operation
+        when(customerDatasourceDetailsRepository.save(any(CustomerDatasourceDetails.class)))
+                .thenReturn(customerDatasourceDetails);
+
+        // Mock the mapping from DTO to entity and vice versa
+        when(customerDatasourceDetailsMapper.toEntity(any(RealmDatasourceModel.class)))
+                .thenReturn(customerDatasourceDetails);
+        when(customerDatasourceDetailsMapper.toDTO(any(CustomerDatasourceDetails.class)))
+                .thenReturn(realmDatasource);
+
+        // When
+        RealmDatasourcesModel response = productSchemaService.saveRealmDatasources(schemaId, realmDatasources);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getRealmDatasources()).isNotEmpty();
+        assertThat(response.getRealmDatasources().get(0).getId()).isEqualTo(realmId);
+
+        // Verify interactions
+        verify(productSchemaMappingRepository, times(1)).existsBySchemaId(anyString());
+        verify(customerDatasourceDetailsRepository, times(1)).findBySchemaIdAndRealmId(anyString(), anyString());
+        verify(customerDatasourceDetailsRepository, times(1)).save(any(CustomerDatasourceDetails.class));
     }
-
-    public UserDTO createUser(UserDTO userDTO) {
-        User user = convertToEntity(userDTO);
-        user = userRepository.save(user);
-        return convertToDTO(user);
-    }
-
-    public UserDTO updateUser(String id, UserDTO userDTO) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setName(userDTO.getName());
-            user.setEmail(userDTO.getEmail());
-            user = userRepository.save(user);
-            return convertToDTO(user);
-        } else {
-            return null;
-        }
-    }
-
-    public void deleteUser(String id) {
-        userRepository.deleteById(id);
-    }
-
-    private UserDTO convertToDTO(User user) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setId(user.getId());
-        userDTO.setName(user.getName());
-        userDTO.setEmail(user.getEmail());
-        return userDTO;
-    }
-
-    private User convertToEntity(UserDTO userDTO) {
-        User user = new User();
-        user.setId(userDTO.getId());
-        user.setName(userDTO.getName());
-        user.setEmail(userDTO.getEmail());
-        return user;
-    }
-}
-```
-
-### Controller
-
-```java
-package com.example.demo.controller;
-
-import com.example.demo.dto.UserDTO;
-import com.example.demo.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/users")
-public class UserController {
-
-    @Autowired
-    private UserService userService;
-
-    @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UserDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUserById(@PathVariable String id) {
-        UserDTO user = userService.getUserById(id);
-        if (user != null) {
-            return ResponseEntity.ok(user);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        UserDTO createdUser = userService.createUser(userDTO);
-        return ResponseEntity.ok(createdUser);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable String id, @RequestBody UserDTO userDTO) {
-        UserDTO updatedUser = userService.updateUser(id, userDTO);
-        if (updatedUser != null) {
-            return ResponseEntity.ok(updatedUser);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
-    }
-}
-```
-
-### Main Application Class
-
-```java
-package com.example.demo;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class DemoApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
-}
-```
-
-### Configuration (application.properties)
-
-```properties
-spring.data.mongodb.uri=mongodb://localhost:27017/yourdatabase
-```
