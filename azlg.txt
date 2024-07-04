@@ -1,23 +1,22 @@
-def get_sheet_data(file_path, sheet_name):
-    workbook = load_workbook(filename=file_path, data_only=True)
+import json
 
-    if sheet_name not in workbook.sheetnames:
-        return None
+def convert_json_string(json_string):
+    # Parse the JSON string into a dictionary
+    data = json.loads(json_string)
+    # Check if the value is a string "true" or "false" and convert it to a boolean
+    if 'value' in data:
+        if data['value'] == "true":
+            data['value'] = True
+        elif data['value'] == "false":
+            data['value'] = False
+    # Convert the dictionary back to a JSON string
+    return json.dumps(data)
+*** Settings ***
+Library    json_converter.py
 
-    sheet = workbook[sheet_name]
-    sheet_data = []
-
-    headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
-
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        row_data = {headers[i]: row[i] for i in range(len(headers))}
-        sheet_data.append(row_data)
-
-    return sheet_data
-
-
-if __name__ == "__main__":
-    file_path = 'path/to/your/excel/file.xlsx'
-    sheet_name = 'Sheet1'
-    data = get_sheet_data(file_path, sheet_name)
-    print(data)
+*** Test Cases ***
+Convert JSON String Test
+    ${input_json}=    Set Variable    {"value": "true"}
+    ${converted_json}=    Convert Json String    ${input_json}
+    Log    ${converted_json}
+    Should Be Equal    ${converted_json}    {"value": true}
