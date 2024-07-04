@@ -1,22 +1,7 @@
-import json
+Library  JSONLibrary
 
-def convert_json_string(json_string):
-    # Parse the JSON string into a dictionary
-    data = json.loads(json_string)
-    # Check if the value is a string "true" or "false" and convert it to a boolean
-    if 'value' in data:
-        if data['value'] == "true":
-            data['value'] = True
-        elif data['value'] == "false":
-            data['value'] = False
-    # Convert the dictionary back to a JSON string
-    return json.dumps(data)
-*** Settings ***
-Library    json_converter.py
-
-*** Test Cases ***
-Convert JSON String Test
-    ${input_json}=    Set Variable    {"value": "true"}
-    ${converted_json}=    Convert Json String    ${input_json}
-    Log    ${converted_json}
-    Should Be Equal    ${converted_json}    {"value": true}
+${json_string} =  {"value": "true"}
+${data} =  Evaluate  json.loads(${json_string})  json  # Optional: Parse json for manipulation
+${data}=  Set To Dictionary  ${data}  value  TRUE
+${converted_json} =  Convert To Json  ${data}
+Log To Console  ${converted_json}
