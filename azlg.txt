@@ -1,7 +1,21 @@
-Library  JSONLibrary
+from robot.api import logger
+import logging
 
-${json_string} =  {"value": "true"}
-${data} =  Evaluate  json.loads(${json_string})  json  # Optional: Parse json for manipulation
-${data}=  Set To Dictionary  ${data}  value  TRUE
-${converted_json} =  Convert To Json  ${data}
-Log To Console  ${converted_json}
+# Set up standard Python logging
+logging.basicConfig(level=logging.INFO)
+
+def log_info(message):
+    logging.info(message)
+    logger.info(message)
+
+def log_debug(message):
+    logging.debug(message)
+    logger.debug(message)
+
+def log_warning(message):
+    logging.warning(message)
+    logger.warn(message)
+
+def log_error(message):
+    logging.error(message)
+    logger.error(message)
