@@ -1,21 +1,28 @@
-from robot.api import logger
-import logging
+import json
 
-# Set up standard Python logging
-logging.basicConfig(level=logging.INFO)
 
-def log_info(message):
-    logging.info(message)
-    logger.info(message)
+def convert_json_booleans(json_str):
+    def convert_values(obj):
+        if isinstance(obj, dict):
+            return {k: convert_values(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_values(i) for i in obj]
+        elif isinstance(obj, str) and obj.lower() == 'true':
+            return True
+        elif isinstance(obj, str) and obj.lower() == 'false':
+            return False
+        return obj
 
-def log_debug(message):
-    logging.debug(message)
-    logger.debug(message)
+    # Parse the JSON string to a Python object
+    data = json.loads(json_str)
 
-def log_warning(message):
-    logging.warning(message)
-    logger.warn(message)
+    # Convert the values
+    converted_data = convert_values(data)
 
-def log_error(message):
-    logging.error(message)
-    logger.error(message)
+    return converted_data
+
+
+# Example usage
+json_input = '{"apple": false}'
+result = convert_json_booleans(json_input)
+print(result)  # Output: {'apple': True}
