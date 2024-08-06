@@ -25,3 +25,39 @@ data = [
 
 result = replace_none_values(data)
 print(result)
+---------------------------------------
+def combine_dictionaries_with_key_check(data_list):
+    combined_dict = {}
+    seen_keys = {}
+
+    for item in data_list:
+        # Extract and remove the 'id' key
+        item_id = item.pop('id', None)
+
+        for key, value in item.items():
+            # Check for duplicate keys
+            if key in seen_keys:
+                raise ValueError(f"Duplicate key found: '{key}' in ID {item_id} and previously in ID {seen_keys[key]}")
+
+            # Track the key with its associated ID
+            seen_keys[key] = item_id
+
+            # Add to the combined dictionary
+            combined_dict[key] = value
+
+    return combined_dict
+
+
+# Example usage
+data = [
+    {'id': 1, 'request[0].Name': 'Deepak', 'request[1].contact': 'Delhi'},
+    {'id': 2, 'request[0].Name': 'Kumar', 'request[0].contact': 'Bombay'},
+    {'id': 2, 'request[1].Name': 'Deepak', 'request[2].contact': 'Kolkata'}
+]
+
+try:
+    result = combine_dictionaries_with_key_check(data)
+    print(result)
+except ValueError as e:
+    print(e)
+
