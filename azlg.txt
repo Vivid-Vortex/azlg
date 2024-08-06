@@ -1,28 +1,27 @@
-import json
+def replace_none_values(data_list):
+    # Collect the known values for each key
+    known_values = {}
 
+    # First pass: Gather all non-None values
+    for item in data_list:
+        for key, value in item.items():
+            if value is not None:
+                known_values[key] = value
 
-def convert_json_booleans(json_str):
-    def convert_values(obj):
-        if isinstance(obj, dict):
-            return {k: convert_values(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [convert_values(i) for i in obj]
-        elif isinstance(obj, str) and obj.lower() == 'true':
-            return True
-        elif isinstance(obj, str) and obj.lower() == 'false':
-            return False
-        return obj
+    # Second pass: Replace None values with known values
+    for item in data_list:
+        for key, value in item.items():
+            if value is None and key in known_values:
+                item[key] = known_values[key]
 
-    # Parse the JSON string to a Python object
-    data = json.loads(json_str)
-
-    # Convert the values
-    converted_data = convert_values(data)
-
-    return converted_data
-
+    return data_list
 
 # Example usage
-json_input = '{"apple": false}'
-result = convert_json_booleans(json_input)
-print(result)  # Output: {'apple': True}
+data = [
+    {'id': 1, 'Name': None, 'contact': 'Delhi'},
+    {'id': None, 'Name': 'Deepak', 'contact': 'Bombay'},
+    {'id': 2, 'Name': 'Deepak', 'contact': None}
+]
+
+result = replace_none_values(data)
+print(result)
