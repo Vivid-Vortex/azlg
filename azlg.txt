@@ -60,9 +60,4 @@ try:
     print(result)
 except ValueError as e:
     print(e)
---------------------------------------------------------
-inside the excel there is a headers, each header is having some characters enclosed under brackets [], 
-while calculating the absolute json path of each cell, we need to check the header of that cell and then replace the
-character enclosed under that heder with the corresponding character values of the row that cell. say if header is having
-request[i].identity, then i will be replace with the actaul value of i in that row which is 0 for that row.
 
