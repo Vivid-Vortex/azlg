@@ -47,3 +47,65 @@ my_list = [
 
 updated_list = replace_none_with_parent_values(my_list)
 print(updated_list)
+
+----------------------------------------------------
+def merge_dicts(parent, child):
+    """Merge missing keys from parent to child, excluding 'ParentID'."""
+    for key in parent:
+        if key not in child and key != 'ParentID':
+            child[key] = parent[key]
+
+
+def merge_parent_child_dicts(data):
+    """Merge missing items from parent dictionaries into their child dictionaries."""
+    parent_dicts = {}
+    child_dicts = {}
+
+    # Separate parent and child dictionaries
+    for item in data:
+        if 'ParentID' in item and item['ParentID'] is not None:
+            parent_id = item['ParentID']
+            if parent_id not in child_dicts:
+                child_dicts[parent_id] = []
+            child_dicts[parent_id].append(item)
+        else:
+            parent_dicts[item['id']] = item
+
+    # Merge missing items from parent to child
+    for parent_id, parent_dict in parent_dicts.items():
+        if parent_id in child_dicts:
+            for child_dict in child_dicts[parent_id]:
+                merge_dicts(parent_dict, child_dict)
+
+    # Combine the updated dictionaries into a single list
+    merged_list = list(parent_dicts.values())
+    for child_list in child_dicts.values():
+        merged_list.extend(child_list)
+
+    return merged_list
+
+
+# Example usage
+my_list = [
+    {
+        "id": 1,
+        "ParentID": None,
+        "request[0].zoneIdentification": "PD3",
+        "request[0].description": "PDC API test zone",
+        "request[0].countryCode": "US",
+        "request[1].zoneIdentification": "PD3",
+        "request[1].description": "PDC API test zone",
+        "request[1].countryCode": "US"
+    },
+    {
+        "id": 2,
+        "ParentID": 1,
+        "request[1].zoneIdentification": "PD3",
+        "request[1].description": "PDC API test zone",
+        "request[1].countryCode": "IN"
+    }
+]
+
+merged_list = merge_parent_child_dicts(my_list)
+print(merged_list)
+
