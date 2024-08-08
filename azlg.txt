@@ -1,16 +1,18 @@
 def replace_none_with_parent_values(my_list):
-    # Create a lookup dictionary for quick access to dictionaries by their 'id'
+    # Create a lookup dictionary where the key is the 'id' and the value is a list of dictionaries with that 'id'
     id_dict = {}
     for d in my_list:
         if d['id'] not in id_dict:
-            id_dict[d['id']] = d
+            id_dict[d['id']] = []
+        id_dict[d['id']].append(d)
 
     # Loop through each dictionary in the list
     for d in my_list:
         # Check if the dictionary has a non-None ParentID, i.e., it's a child dictionary
         if d['ParentID'] is not None:
-            parent_dict = id_dict.get(d['ParentID'])
-            if parent_dict:
+            # Get the list of parent dictionaries corresponding to the ParentID
+            parent_dicts = id_dict.get(d['ParentID'], [])
+            for parent_dict in parent_dicts:
                 # Replace actual None values in the child dictionary with exact key matches from the parent dictionary
                 for key, value in d.items():
                     if value is None and key in parent_dict:
@@ -21,22 +23,25 @@ def replace_none_with_parent_values(my_list):
 # Example usage
 my_list = [
     {
-        'id': 1,
-        'ParentID': None,
-        'name': 'Deepak',
-        'phone': 'mobile'
+        "id": 1,
+        "ParentID": None,
+        "request[0].zoneIdentification": "PD3",
+        "request[0].description": "PDC API test zone",
+        "request[0].countryCode": "US"
     },
     {
-        'id': 1,
-        'ParentID': None,
-        'name2': 'None',
-        'phone2': 'mobile'
+        "id": 1,
+        "ParentID": None,
+        "request[1].zoneIdentification": "PD3",
+        "request[1].description": "PDC API test zone",
+        "request[1].countryCode": "US"
     },
     {
-        'id': 2,
-        'ParentID': 1,
-        'name': None,  # This should be replaced with 'Deepak' from parent dictionary
-        'phone': 'mobile'
+        "id": 2,
+        "ParentID": 1,
+        "request[1].zoneIdentification": None,
+        "request[1].description": None,
+        "request[1].countryCode": "IN"
     }
 ]
 
