@@ -1,63 +1,44 @@
-def replace_none_values(data_list):
-    # Collect the known values for each key
-    known_values = {}
+def replace_none_with_parent_values(my_list):
+    # Create a lookup dictionary for quick access to dictionaries by their 'id' and 'ParentID'
+    id_dict = {}
+    for d in my_list:
+        if d['id'] not in id_dict:
+            id_dict[d['id']] = d
 
-    # First pass: Gather all non-None values
-    for item in data_list:
-        for key, value in item.items():
-            if value is not None:
-                known_values[key] = value
+    # Loop through each dictionary in the list
+    for d in my_list:
+        # Check if the dictionary has a non-None ParentID, i.e., it's a child dictionary
+        if d['ParentID'] is not None:
+            parent_dict = id_dict.get(d['ParentID'])
+            if parent_dict:
+                # Replace actual None values in the child dictionary with values from the parent dictionary
+                for key, value in d.items():
+                    if value is None and key in parent_dict:
+                        d[key] = parent_dict[key]
 
-    # Second pass: Replace None values with known values
-    for item in data_list:
-        for key, value in item.items():
-            if value is None and key in known_values:
-                item[key] = known_values[key]
-
-    return data_list
-
-# Example usage
-data = [
-    {'id': 1, 'Name': None, 'contact': 'Delhi'},
-    {'id': None, 'Name': 'Deepak', 'contact': 'Bombay'},
-    {'id': 2, 'Name': 'Deepak', 'contact': None}
-]
-
-result = replace_none_values(data)
-print(result)
----------------------------------------
-def combine_dictionaries_with_key_value_check(data_list):
-    combined_dict = {}
-    seen_key_value_pairs = {}
-
-    for item in data_list:
-        # Extract and remove the 'id' key
-        item_id = item.pop('id', None)
-
-        for key, value in item.items():
-            # Check for the same key with the same value
-            if key in seen_key_value_pairs and seen_key_value_pairs[key] == value:
-                raise ValueError(f"Duplicate key-value pair found: '{key}: {value}' in ID {item_id}")
-
-            # Track the key-value pair
-            seen_key_value_pairs[key] = value
-
-            # Since we want to keep all unique key-value combinations, add them to the combined dictionary
-            combined_dict[key] = value
-
-    return combined_dict
-
+    return my_list
 
 # Example usage
-data = [
-    {'id': 1, 'request[0].Name': 'Deepak', 'request[1].contact': 'Delhi'},
-    {'id': 2, 'request[0].Name': 'Kumar', 'request[0].contact': 'Bombay'},
-    {'id': 2, 'request[1].Name': 'Deepak', 'request[1].contact': 'Kolkata'}
+my_list = [
+    {
+        'id': 1,
+        'ParentID': None,
+        'name': 'Deepak',
+        'phone': 'mobile'
+    },
+    {
+        'id': 1,
+        'ParentID': None,
+        'name2': 'None',
+        'phone2': 'mobile'
+    },
+    {
+        'id': 2,
+        'ParentID': 1,
+        'name': None,  # This should be replaced with 'Deepak' from parent dictionary
+        'phone': 'mobile'
+    }
 ]
 
-try:
-    result = combine_dictionaries_with_key_value_check(data)
-    print(result)
-except ValueError as e:
-    print(e)
-
+updated_list = replace_none_with_parent_values(my_list)
+print(updated_list)
