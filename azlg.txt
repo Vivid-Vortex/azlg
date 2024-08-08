@@ -56,33 +56,43 @@ def merge_dicts(parent, child):
             child[key] = parent[key]
 
 
-def merge_parent_child_dicts(data):
-    """Merge missing items from parent dictionaries into their child dictionaries."""
-    parent_dicts = {}
-    child_dicts = {}
+def build_parent_child_mapping(data):
+    """Build mapping of parent ID to its child dictionaries."""
+    parent_to_children = {}
+    all_dicts = {item['id']: item for item in data}
 
-    # Separate parent and child dictionaries
     for item in data:
-        if 'ParentID' in item and item['ParentID'] is not None:
-            parent_id = item['ParentID']
-            if parent_id not in child_dicts:
-                child_dicts[parent_id] = []
-            child_dicts[parent_id].append(item)
-        else:
-            parent_dicts[item['id']] = item
+        parent_id = item.get('ParentID')
+        if parent_id and parent_id in all_dicts:
+            if parent_id not in parent_to_children:
+                parent_to_children[parent_id] = []
+            parent_to_children[parent_id].append(item['id'])
 
-    # Merge missing items from parent to child
-    for parent_id, parent_dict in parent_dicts.items():
-        if parent_id in child_dicts:
-            for child_dict in child_dicts[parent_id]:
-                merge_dicts(parent_dict, child_dict)
+    return parent_to_children, all_dicts
 
-    # Combine the updated dictionaries into a single list
-    merged_list = list(parent_dicts.values())
-    for child_list in child_dicts.values():
-        merged_list.extend(child_list)
 
-    return merged_list
+def merge_hierarchy(data):
+    """Merge parent dictionaries into their child dictionaries recursively."""
+    parent_to_children, all_dicts = build_parent_child_mapping(data)
+
+    def merge_from_bottom_up(current_id):
+        """Merge dictionary with all its parents recursively."""
+        if current_id in parent_to_children:
+            for child_id in parent_to_children[current_id]:
+                merge_from_bottom_up(child_id)
+                merge_dicts(all_dicts[current_id], all_dicts[child_id])
+
+    # Build a reverse mapping to check which items are children
+    child_ids = {child_id for children in parent_to_children.values() for child_id in children}
+
+    # Start merging from the leaf nodes (those not in child_ids)
+    all_ids = set(all_dicts.keys())
+    root_ids = all_ids - child_ids
+
+    for root_id in root_ids:
+        merge_from_bottom_up(root_id)
+
+    return list(all_dicts.values())
 
 
 # Example usage
@@ -91,21 +101,22 @@ my_list = [
         "id": 1,
         "ParentID": None,
         "request[0].zoneIdentification": "PD3",
-        "request[0].description": "PDC API test zone",
-        "request[0].countryCode": "US",
-        "request[1].zoneIdentification": "PD3",
-        "request[1].description": "PDC API test zone",
-        "request[1].countryCode": "US"
+        "request[0].description": "PDC API test zone"
     },
     {
-        "id": 2,
+        "id": 21,
         "ParentID": 1,
         "request[1].zoneIdentification": "PD3",
-        "request[1].description": "PDC API test zone",
-        "request[1].countryCode": "IN"
+        "request[1].description": "PDC API test zone"
+    },
+    {
+        "id": 8,
+        "ParentID": 21,
+        "request[2].zoneIdentification": "PD4",
+        "request[2].description": "ABC API test zone",
+        "request[2].countryCode": "SA"
     }
 ]
 
-merged_list = merge_parent_child_dicts(my_list)
+merged_list = merge_hierarchy(my_list)
 print(merged_list)
-
