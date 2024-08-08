@@ -1,5 +1,5 @@
 def replace_none_with_parent_values(my_list):
-    # Create a lookup dictionary for quick access to dictionaries by their 'id' and 'ParentID'
+    # Create a lookup dictionary for quick access to dictionaries by their 'id'
     id_dict = {}
     for d in my_list:
         if d['id'] not in id_dict:
@@ -11,7 +11,7 @@ def replace_none_with_parent_values(my_list):
         if d['ParentID'] is not None:
             parent_dict = id_dict.get(d['ParentID'])
             if parent_dict:
-                # Replace actual None values in the child dictionary with values from the parent dictionary
+                # Replace actual None values in the child dictionary with exact key matches from the parent dictionary
                 for key, value in d.items():
                     if value is None and key in parent_dict:
                         d[key] = parent_dict[key]
