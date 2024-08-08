@@ -55,7 +55,6 @@ def merge_dicts(parent, child):
         if key not in child and key != 'ParentID':
             child[key] = parent[key]
 
-
 def build_parent_child_mapping(data):
     """Build mapping of parent ID to its child dictionaries."""
     parent_to_children = {}
@@ -63,37 +62,31 @@ def build_parent_child_mapping(data):
 
     for item in data:
         parent_id = item.get('ParentID')
-        if parent_id and parent_id in all_dicts:
+        if parent_id is not None and parent_id in all_dicts:
             if parent_id not in parent_to_children:
                 parent_to_children[parent_id] = []
             parent_to_children[parent_id].append(item['id'])
 
     return parent_to_children, all_dicts
 
-
 def merge_hierarchy(data):
     """Merge parent dictionaries into their child dictionaries recursively."""
     parent_to_children, all_dicts = build_parent_child_mapping(data)
 
-    def merge_from_bottom_up(current_id):
-        """Merge dictionary with all its parents recursively."""
-        if current_id in parent_to_children:
-            for child_id in parent_to_children[current_id]:
-                merge_from_bottom_up(child_id)
-                merge_dicts(all_dicts[current_id], all_dicts[child_id])
+    def merge_all_ancestors(current_id):
+        """Recursively merge all ancestors into the current dictionary."""
+        item = all_dicts[current_id]
+        parent_id = item.get('ParentID')
 
-    # Build a reverse mapping to check which items are children
-    child_ids = {child_id for children in parent_to_children.values() for child_id in children}
+        if parent_id and parent_id in all_dicts:
+            merge_all_ancestors(parent_id)
+            merge_dicts(all_dicts[parent_id], item)
 
-    # Start merging from the leaf nodes (those not in child_ids)
-    all_ids = set(all_dicts.keys())
-    root_ids = all_ids - child_ids
-
-    for root_id in root_ids:
-        merge_from_bottom_up(root_id)
+    # Start by merging all ancestors for each dictionary
+    for item_id in all_dicts:
+        merge_all_ancestors(item_id)
 
     return list(all_dicts.values())
-
 
 # Example usage
 my_list = [
@@ -120,3 +113,4 @@ my_list = [
 
 merged_list = merge_hierarchy(my_list)
 print(merged_list)
+
