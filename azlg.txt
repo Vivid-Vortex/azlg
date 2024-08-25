@@ -1,116 +1,153 @@
-def replace_none_with_parent_values(my_list):
-    # Create a lookup dictionary where the key is the 'id' and the value is a list of dictionaries with that 'id'
-    id_dict = {}
-    for d in my_list:
-        if d['id'] not in id_dict:
-            id_dict[d['id']] = []
-        id_dict[d['id']].append(d)
+import re
 
-    # Loop through each dictionary in the list
-    for d in my_list:
-        # Check if the dictionary has a non-None ParentID, i.e., it's a child dictionary
-        if d['ParentID'] is not None:
-            # Get the list of parent dictionaries corresponding to the ParentID
-            parent_dicts = id_dict.get(d['ParentID'], [])
-            for parent_dict in parent_dicts:
-                # Replace actual None values in the child dictionary with exact key matches from the parent dictionary
-                for key, value in d.items():
-                    if value is None and key in parent_dict:
-                        d[key] = parent_dict[key]
 
+def filter_dict_by_patterns(my_list, patterns):
+    compiled_patterns = []
+
+    # Compile all the patterns into regex patterns
+    for pattern in patterns:
+        escaped_pattern = re.escape(pattern).replace(r'\[', r'\[').replace(r'\]', r'\]')
+        pattern_regex = re.compile(escaped_pattern.replace(r'\[i\]', r'\[\d+\]').replace(r'\[j\]', r'\[\d+\]'))
+        compiled_patterns.append(pattern_regex)
+
+    for dictionary in my_list:
+        # Always keep 'id' and 'ParentID'
+        keys_to_keep = ['id', 'ParentID']
+
+        # Check if any key matches any of the patterns
+        for key in dictionary:
+            if any(compiled_pattern.match(key) for compiled_pattern in compiled_patterns):
+                keys_to_keep.append(key)
+
+        # Remove keys that do not match any pattern and are not 'id' or 'ParentID'
+        keys_to_remove = [key for key in dictionary if key not in keys_to_keep]
+
+        for key in keys_to_remove:
+            del dictionary[key]
     return my_list
 
-# Example usage
-my_list = [
-    {
-        "id": 1,
-        "ParentID": None,
-        "request[0].zoneIdentification": "PD3",
-        "request[0].description": "PDC API test zone",
-        "request[0].countryCode": "US"
-    },
-    {
-        "id": 1,
-        "ParentID": None,
-        "request[1].zoneIdentification": "PD3",
-        "request[1].description": "PDC API test zone",
-        "request[1].countryCode": "US"
-    },
-    {
-        "id": 2,
-        "ParentID": 1,
-        "request[1].zoneIdentification": None,
-        "request[1].description": None,
-        "request[1].countryCode": "IN"
-    }
-]
 
-updated_list = replace_none_with_parent_values(my_list)
-print(updated_list)
+def transform_list(my_list):
+    transformed_list = []
 
-----------------------------------------------------
-def merge_dicts(parent, child):
-    """Merge missing keys from parent to child, excluding 'ParentID'."""
-    for key in parent:
-        if key not in child and key != 'ParentID':
-            child[key] = parent[key]
+    for item in my_list:
+        id_value = item['id']
+        parent_id_value = item['ParentID']
 
-def build_parent_child_mapping(data):
-    """Build mapping of parent ID to its child dictionaries."""
-    parent_to_children = {}
-    all_dicts = {item['id']: item for item in data}
+        for key, value in item.items():
+            if key not in ['id', 'ParentID']:
+                transformed_dict = {
+                    'id': id_value,
+                    'ParentID': parent_id_value,
+                    key: value
+                }
+                transformed_list.append(transformed_dict)
 
-    for item in data:
-        parent_id = item.get('ParentID')
-        if parent_id is not None and parent_id in all_dicts:
-            if parent_id not in parent_to_children:
-                parent_to_children[parent_id] = []
-            parent_to_children[parent_id].append(item['id'])
+    return transformed_list
 
-    return parent_to_children, all_dicts
-
-def merge_hierarchy(data):
-    """Merge parent dictionaries into their child dictionaries recursively."""
-    parent_to_children, all_dicts = build_parent_child_mapping(data)
-
-    def merge_all_ancestors(current_id):
-        """Recursively merge all ancestors into the current dictionary."""
-        item = all_dicts[current_id]
-        parent_id = item.get('ParentID')
-
-        if parent_id and parent_id in all_dicts:
-            merge_all_ancestors(parent_id)
-            merge_dicts(all_dicts[parent_id], item)
-
-    # Start by merging all ancestors for each dictionary
-    for item_id in all_dicts:
-        merge_all_ancestors(item_id)
-
-    return list(all_dicts.values())
 
 # Example usage
-my_list = [
+my_list = [{
+    'id': 1,
+    'ParentID': None,
+    'request[0].name': 'Deepak',
+    'request[1].name': 'Kumar',
+    'request[2].name': 'Aman',
+    'request[0].phone[0].[0].mobile': '97388484848',
+    'request[0].contact[0]': 'mobile',
+    'request[0].pan[0]': 'mobile'
+},
     {
-        "id": 1,
-        "ParentID": None,
-        "request[0].zoneIdentification": "PD3",
-        "request[0].description": "PDC API test zone"
-    },
-    {
-        "id": 21,
-        "ParentID": 1,
-        "request[1].zoneIdentification": "PD3",
-        "request[1].description": "PDC API test zone"
-    },
-    {
-        "id": 8,
-        "ParentID": 21,
-        "request[2].zoneIdentification": "PD4",
-        "request[2].description": "ABC API test zone",
-        "request[2].countryCode": "SA"
-    }
-]
+        'id': 2,
+        'ParentID': 1,
+        'request[0].name': 'Rajesh',
+        'request[1].name': 'Khanna',
+        'request[0].phone[0].[1].mobile': '97388484859',
+        'request[0].phone[1].[1].mobile': '973884847859',
+        'request[1].contact[1]': 'mobile'
+    }]
 
-merged_list = merge_hierarchy(my_list)
-print(merged_list)
+# Filter the list by multiple patterns
+my_list1 = filter_dict_by_patterns(my_list, ['request[i].name', 'request[i].contact[j]', 'request[i].pan[j]'])
+# my_list = transform_list(my_list)
+
+# Print the filtered list
+print(my_list1)
+
+-----------------------------------------------------------------------------------------------------------------------------------
+def segregat_dictinoary_list(my_list):
+    transformed_list = []
+
+    for item in my_list:
+        id_value = item['id']
+        parent_id_value = item['ParentID']
+
+        # Iterate over all key-value pairs in the dictionary except 'id' and 'ParentID'
+        for key, value in item.items():
+            if key not in ['id', 'ParentID']:
+                # Create a new dictionary with 'id', 'ParentID', and the current key-value pair
+                transformed_dict = {
+                    'id': id_value,
+                    'ParentID': parent_id_value,
+                    key: value
+                }
+                # Add the transformed dictionary to the result list
+                transformed_list.append(transformed_dict)
+
+    return transformed_list
+
+
+# Example input
+# my_list = [
+#     {
+#         'id': 1,
+#         'ParentID': None,
+#         'request[0].name': 'Deepak',
+#         'request[1].name': 'Kumar',
+#         'request[2].name': 'Aman',
+#         'request[0].phone[0].[0].mobile': '97388484848',
+#         'request[0].contact[0]': 'mobile',
+#         'request[0].pan[0]': 'mobile'
+#     },
+#     {
+#         'id': 2,
+#         'ParentID': 1,
+#         'request[0].name': 'Rajesh',
+#         'request[1].name': 'Khanna',
+#         'request[0].phone[0].[1].mobile': '97388484859',
+#         'request[0].phone[1].[1].mobile': '973884847859',
+#         'request[1].contact[1]': 'mobile'
+#     }
+# ]
+
+my_list = [{'id': 1, 'ParentID': None, 'request[0].name': 'Deepak', 'request[1].name': 'Kumar', 'request[2].name': 'Aman', 'request[0].contact[0]': 'mobile', 'request[0].pan[0]': 'mobile'}, {'id': 2, 'ParentID': 1, 'request[0].name': 'Rajesh', 'request[1].name': 'Khanna', 'request[1].contact[1]': 'mobile'}]
+
+# Transform the input list
+my_list_expected = segregat_dictinoary_list(my_list)
+print(my_list_expected)
+-----------------------------------------------------------------------------------------------------------------------------------
+def select_non_id_key(dictionary):
+    # Filter out 'id' and 'ParentID' from the keys
+    non_id_keys = [key for key in dictionary.keys() if key not in ['id', 'ParentID']]
+
+    # Check if there are any non-id keys
+    if non_id_keys:
+        # Return the first key or you can select any other key based on your criteria
+        return non_id_keys[0]
+    else:
+        return None
+
+
+# Example dictionary
+# example_dict = {
+#     "id": 1,
+#     "ParentID": None,
+#     "request[0].name": "Deepak"
+# }
+
+example_dict = {'id': 2, 'ParentID': 1, 'request[1].contact[1]': 'mobile'}
+
+# Select a key that is not 'id' or 'ParentID'
+selected_key = select_non_id_key(example_dict)
+print(selected_key)  # Output: 'request[0].name'
 
