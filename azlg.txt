@@ -1,14 +1,43 @@
-import json  
+plugins {
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+}
 
-def chunk_json(json_data, chunk_size=1000):
-    """Splits large JSON data into smaller chunks"""
-    json_str = json.dumps(json_data)  
-    return [json_str[i:i+chunk_size] for i in range(0, len(json_str), chunk_size)]
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
 
-# Load JSON
-with open("large_file.json", "r") as file:
-    data = json.load(file)
+subprojects {
+    // Enable 'java' plugin if it is missing
+    if (!plugins.hasPlugin('java')) {
+        apply plugin: 'java'
+    }
 
-chunks = chunk_json(data)
-for chunk in chunks:
-    response = llm.process(chunk)  # Send chunk to LLM
+    dependencies {
+        implementation platform('org.springframework.boot:spring-boot-dependencies:3.1.0')
+    }
+
+    jar {
+        enabled = true // Ensure subprojects generate JARs
+    }
+}
+
+dependencies {
+    implementation project(':subproject1')  // Add only the required subprojects
+    implementation project(':subproject2')
+}
+
+bootJar {
+    // Ensure subprojects build before main bootJar
+    dependsOn subprojects*.bootJar  
+
+    // Collect JARs from subprojects' build/libs directory
+    from {
+        subprojects.collect { subproject ->
+            fileTree(dir: subproject.buildDir, include: 'libs/*.jar')
+        }
+    } into('BOOT-INF/lib/')
+}
