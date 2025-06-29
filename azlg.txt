@@ -1,3 +1,7 @@
+git branch snapshot-1-$(git branch --show-current)-$(git log -1 --format=%cd --date=format:%Y%m%d-%H%M%S)
+git branch "snapshot-1-$(git branch --show-current)-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+git branch snapshot-1-$(git branch --show-current)-$(date +%Y%m%d-%H%M%S)
+
 plugins {
     id 'org.springframework.boot' version '3.1.0'
     id 'io.spring.dependency-management' version '1.1.0'
