@@ -1,7 +1,12 @@
-Manikanta has shown commendable adaptability in adapting both the existing IDM Spring Web Flow concepts and our custom Flow Engine technology during his initial 2-3 months. He has also been instrumental in helping new team members onboard, sharing his knowledge generously. His systematic approach to understanding complex legacy systems and translating IDM logic into Flow Engine patterns has been impressive. However, he could be more proactive in team refinement sessions to shape our development processes, and with his primary skill assessment now expired, scheduling a fresh assessment would ensure his skills remain current.
+flowchart TD
+    A([Start])
+    B[shapeAPIServiceCall]
+    C{Branch}
 
-Amarnath has excelled in cross-functional collaboration, effectively communicating with shape teams to gather API details for his work. His completion of the security-critical Shape API integration is a noteworthy achievement. While his technical foundation is sound, there is room for improvement in deepening his mastery of the underlying technologies, ensuring his solutions are not only functional but also optimized and maintainable.
+    A --> B
+    B --> C
 
-Sanjana has demonstrated a very good analytical skills in understanding the complex IDM Spring Web Flow architecture and documenting her findings with remarkable clarity. She has completed all tasks assigned to her, consistently delivering on expectations. To further enhance her impact, she would benefit from taking greater ownership of her tasks, proactively driving initiatives end-to-end rather than waiting for direction.
-
-Deepthi has shown a good technical foundation and a strong zeal to learn and grow, quickly grasping the essentials of both IDM and Flow Engine technologies, especially in test automation section. She maintains professional communication with cross-functional teams and contributes valuable insights during API onboarding. To elevate her contributions, she should engage more actively in team meetings and work on enhancing her documentation skills to better support knowledge sharing.
+    C -->|success| D[apiCallFailed]
+    C -->|rc == 1| E[markAsObjectDetected]
+    C -->|rc == unsupported| F[markAsUnsupportedBrowser]
+    C -->|rc == 1| G[allowFlowToContinueBasedOnObjectDetection]
